@@ -15,8 +15,8 @@
     <section>
       <ul>
         <li class="todo-list" v-for="todo in todos" :key="todo.id">
-          <input class="toggle" type="checkbox" />
-          {{ todo.title }}
+          <input class="toggle" type="checkbox" :checked="todo.completed" />
+          {{ todo.title }} || {{ todo.completed }}
         </li>
       </ul>
     </section>
@@ -40,7 +40,7 @@ export default {
       };
 
       if (!value) {
-        return
+        return;
       }
 
       this.todos.push(todoItem);
