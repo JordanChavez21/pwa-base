@@ -2,7 +2,7 @@
   <section class="todoapp">
     <header class="header">
       <h1>Tareas</h1>
-      {{database}}
+      {{ database }}
       <button @click="getDataBase">llamar a la lbd</button>
       <input
         class="new-todo"
@@ -135,9 +135,9 @@ export default {
       },
     },
   },
-  async created(){
-    this.todos = await this.getTodoStore()
-  }, 
+  async created() {
+    this.todos = await this.getTodoStore();
+  },
   methods: {
     addTodo() {
       const value = this.newTodo && this.newTodo.trim();
@@ -162,16 +162,16 @@ export default {
 
     doneEdit(todo) {
       if (!this.editedTodo) {
-        return
+        return;
       }
-      this.editedTodo = null
-      todo.title = todo.title.trim()
+      this.editedTodo = null;
+      todo.title = todo.title.trim();
       this.saveTodo({
         ...todo,
-        title: todo.title
-      })
+        title: todo.title,
+      });
       if (!todo.title) {
-        this.removeTodo(todo)
+        this.removeTodo(todo);
       }
     },
     editTodo(todo) {
@@ -186,9 +186,9 @@ export default {
     removeCompleted() {
       this.todos = this.todos.filter((item) => {
         if (item.completed) {
-          this.deleteTodo(item)
+          this.deleteTodo(item);
         } else {
-          return !item.completed
+          return !item.completed;
         }
       });
     },
@@ -196,108 +196,99 @@ export default {
     removeTodo(todo) {
       const index = this.todos.indexOf(todo);
       this.todos.splice(index, 1);
-       this.deleteTodo(todo)
+      this.deleteTodo(todo);
     },
 
-     updateTodo(todo) {
-      this.todos.find(item => item === todo).completed = !todo.completed
+    updateTodo(todo) {
+      this.todos.find((item) => item === todo).completed = !todo.completed;
       this.saveTodo({
-        ...todo
-      })
+        ...todo,
+      });
     },
-    async getDataBase(){
+    async getDataBase() {
+      return new Promise((resolve, reject) => {
+        if (this.database) {
+          resolve(this.database);
+        }
 
-        return new Promise((resolve, reject) => {
+        let request = window.indexedDB.open("tododb", 1);
 
-            if(this.database){
-              resolve(this.database)
-            }
+        request.onerror = (event) => {
+          this.database = event.target.result;
+          reject("Error");
+        };
 
-            let request = window.indexedDB.open('tododb',1);
+        request.onsuccess = (event) => {
+          this.database = event.target.result;
+          resolve(this.database);
+        };
 
-            request.onerror = event  => {
-              this.database = event.target.result
-              reject("Error")
-            }
-
-            request.onsuccess = event  => {
-              this.database = event.target.result
-              resolve(this.database)
-            }
-
-            request.onupgradeneeded = event  => {
-              let database =  event.target.result
-              database.createObjectStore('todos', {
-                autoIncrement: true,
-                keyPath: 'id'
-              })
-              
-            }
-        })
-
-
+        request.onupgradeneeded = (event) => {
+          let database = event.target.result;
+          database.createObjectStore("todos", {
+            autoIncrement: true,
+            keyPath: "id",
+          });
+        };
+      });
     },
     async getTodoStore() {
-      this.database = await this.getDataBase()
+      this.database = await this.getDataBase();
 
-        return new Promise((resolve, reject) => {
-          const transaction = this.database.transaction('todos','readwrite')
-          const store = transaction.objectStore('todos')
-          let todoList = []
-          store.openCursor().onsuccess = event => {
-            const cursor = event.target.result
-            if(cursor){
-              todoList.push(cursor.value)
-              cursor.continue()
-            }
+      return new Promise((resolve, reject) => {
+        const transaction = this.database.transaction("todos", "readwrite");
+        const store = transaction.objectStore("todos");
+        let todoList = [];
+        store.openCursor().onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            todoList.push(cursor.value);
+            cursor.continue();
           }
+        };
 
-          transaction.oncomplete = () => {
-            resolve(todoList)
-          }
+        transaction.oncomplete = () => {
+          resolve(todoList);
+        };
 
-           transaction.onerror = event => {
-            reject(event)
-          }
+        transaction.onerror = (event) => {
+          reject(event);
+        };
+      });
+    },
+    async saveTodo(todo) {
+      this.database = await this.getDataBase();
 
-        })
+      return new Promise((resolve, reject) => {
+        const transaction = this.database.transaction("todos", "readwrite");
+        const store = transaction.objectStore("todos");
 
-    }, 
-    async saveTodo(todo){
-        this.database = await this.getDataBase()
+        store.put(todo);
 
-        return new Promise((resolve, reject) =>{
-            const transaction = this.database.transaction('todos','readwrite')
-            const store = transaction.objectStore('todos')
+        transaction.oncomplete = () => {
+          resolve("El item se agrego correctamente");
+        };
 
-            store.put(todo)
-
-            transaction.oncomplete = () => {
-            resolve("El item se agrego correctamente")
-          }
-
-           transaction.onerror = event => {
-            reject(event)
-          }
-
-        })
+        transaction.onerror = (event) => {
+          reject(event);
+        };
+      });
     },
 
     async deleteTodo(todo) {
-      this.database = await this.getDataBase()
+      this.database = await this.getDataBase();
       return new Promise((resolve, reject) => {
-        const transaction = this.database.transaction('todos', 'readwrite')
-        const store = transaction.objectStore('todos')
-        store.delete(todo.id)
+        const transaction = this.database.transaction("todos", "readwrite");
+        const store = transaction.objectStore("todos");
+        store.delete(todo.id);
         transaction.oncomplete = () => {
-          resolve('todo eleiminado')
-        }
-        transaction.onerror = event => {
-          reject(event)
-        }
-      })
+          resolve("todo eleiminado");
+        };
+        transaction.onerror = (event) => {
+          reject(event);
+        };
+      });
     },
-
   },
 };
 </script>
