@@ -282,7 +282,7 @@ export default {
         const store = transaction.objectStore("todos");
         store.delete(todo.id);
         transaction.oncomplete = () => {
-          resolve("todo eleiminado");
+          resolve("todo eliminado");
         };
         transaction.onerror = (event) => {
           reject(event);
